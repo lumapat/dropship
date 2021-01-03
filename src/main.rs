@@ -2,6 +2,7 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
+mod dir_diff;
 mod dir_tree;
 
 #[derive(Debug, StructOpt)]
@@ -45,9 +46,11 @@ fn compare(base_path: &Path, target_path: &Path) -> Result<(), Box<dyn Error>> {
     let base_dir_tree = dir_tree::load_dir_tree(base_path)?;
     let target_dir_tree = dir_tree::load_dir_tree(target_path)?;
 
-    println!("Comparing {:#?} to {:#?}",
-             base_dir_tree,
-             target_dir_tree);
+    let comparison = dir_diff::compare_dirs(&base_dir_tree, &target_dir_tree);
+    println!("Comparing {:#?} to {:#?}: {:#?}",
+             base_path,
+             target_path,
+             comparison);
 
     Ok(())
 }
