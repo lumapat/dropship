@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug)]
 pub struct File {
     /// Full path of the current directory
-    path: PathBuf,
+    pub path: PathBuf,
 }
 
 #[derive(Debug)]

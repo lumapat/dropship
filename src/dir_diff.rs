@@ -1,7 +1,10 @@
-use crate::dir_tree::DirTree;
+use crate::dir_tree::{self, DirTree};
+use sha2::{Digest, Sha256};
 use std::clone::Clone;
 use std::collections::{HashMap, HashSet};
+use std::fs;
 use std::hash::Hash;
+use std::io::{self, Result};
 
 #[derive(Debug)]
 pub struct Comparison<T> {
@@ -55,6 +58,16 @@ fn simple_comparison<T: Clone + Eq + Hash>(base: &HashSet<T>, target: &HashSet<T
     }
 }
 
+type FileHash = [u8; 32];
+
+fn hash_file(file: &dir_tree::File) -> Result<FileHash> {
+    let mut f = fs::File::open(file.path.as_path())?;
+    let mut sha = Sha256::new();
+
+    io::copy(&mut f, &mut sha)?;
+    Ok(sha.finalize().into())
+}
+
 pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
     // Assuming directory names are the same, compare contents
 
@@ -62,7 +75,54 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
     let base_file_names: HashSet<_> = base_dir.files.keys().cloned().collect();
     let target_file_names: HashSet<_> = target_dir.files.keys().cloned().collect();
 
-    let file_comparison = simple_comparison(&base_file_names, &target_file_names);
+    let file_prelim_comparison = simple_comparison(&base_file_names, &target_file_names);
+
+    let mut changed_files: HashSet<String> = HashSet::new();
+
+    // TODO: Compare file contents or hashes
+    // TODO: Store errors
+    // TODO: Surface errors instead of printing them out here
+    for file in file_prelim_comparison.same.iter() {
+        let base_file = match base_dir.files.get(file) {
+            Some(f) => f,
+            None => {
+                println!("Somehow you messed up with {:?}", file);
+                continue;
+            }
+        };
+
+        let target_file = match target_dir.files.get(file) {
+            Some(f) => f,
+            None => {
+                println!("Somehow you messed up with {:?}", file);
+                continue;
+            }
+        };
+
+        let base_hash = match hash_file(base_file) {
+            Ok(h) => h,
+            Err(e) => {
+                println!("Error when hashing file: {}", e);
+                continue;
+            }
+        };
+
+        let target_hash = match hash_file(target_file) {
+            Ok(h) => h,
+            Err(e) => {
+                println!("Error when hashing file: {}", e);
+                continue;
+            }
+        };
+
+        if base_hash != target_hash {
+            changed_files.insert(file.to_string());
+        }
+    }
+
+    let mut file_comparison = file_prelim_comparison;
+    file_comparison.changed = changed_files;
+    file_comparison.same = file_comparison.same.symmetric_difference(&file_comparison.changed).cloned().collect();
 
     // Compare subdirectories
     let base_subdir_names: HashSet<_> = base_dir.subdirs.keys().cloned().collect();
