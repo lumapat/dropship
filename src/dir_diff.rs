@@ -6,7 +6,8 @@ use std::fs;
 use std::hash::Hash;
 use std::io::{self, Result};
 
-#[derive(Debug)]
+// TODO: Difference between Clone and Copy?
+#[derive(Debug, Clone)]
 pub struct Comparison<T> {
     /// Items that contain differences
     pub changed: HashSet<T>,
@@ -21,7 +22,9 @@ pub struct Comparison<T> {
     pub same: HashSet<T>,
 }
 
-impl<T> Comparison<T> {
+impl<T> Comparison<T>
+    where T: Clone
+{
     pub fn unchanged(&self) -> bool {
         self.changed.is_empty() &&
         self.new.is_empty() &&
@@ -29,7 +32,7 @@ impl<T> Comparison<T> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DirComparison {
     /// Result of comparing files in the directory
     pub file_comparison: Comparison<String>,
