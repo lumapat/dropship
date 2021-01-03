@@ -52,8 +52,8 @@ impl DirComparison {
 fn simple_comparison<T: Clone + Eq + Hash>(base: &HashSet<T>, target: &HashSet<T>) -> Comparison<T> {
     Comparison {
         changed: HashSet::new(),
-        missing: base.symmetric_difference(target).cloned().collect(),
-        new: target.symmetric_difference(base).cloned().collect(),
+        missing: base.difference(target).cloned().collect(),
+        new: target.difference(base).cloned().collect(),
         same: base.intersection(target).cloned().collect(),
     }
 }
@@ -122,7 +122,7 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
 
     let mut file_comparison = file_prelim_comparison;
     file_comparison.changed = changed_files;
-    file_comparison.same = file_comparison.same.symmetric_difference(&file_comparison.changed).cloned().collect();
+    file_comparison.same = file_comparison.same.difference(&file_comparison.changed).cloned().collect();
 
     // Compare subdirectories
     let base_subdir_names: HashSet<_> = base_dir.subdirs.keys().cloned().collect();
@@ -159,7 +159,7 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
     let mut subdir_comparison = subdir_prelim_comparison;
 
     subdir_comparison.changed = changed_subdirs.keys().cloned().collect();
-    subdir_comparison.same = subdir_comparison.same.symmetric_difference(&subdir_comparison.changed).cloned().collect();
+    subdir_comparison.same = subdir_comparison.same.difference(&subdir_comparison.changed).cloned().collect();
 
     DirComparison {
         file_comparison,
