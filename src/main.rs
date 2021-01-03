@@ -7,8 +7,8 @@ mod dir_sync;
 mod dir_tree;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "options", about = "TODO!")]
-struct Opt {
+#[structopt(name = "global options", about = "TODO!")]
+struct GlobalOptions {
     /// Run without committing any changes
     #[structopt(short, long)]
     no_commit: bool,
@@ -16,6 +16,13 @@ struct Opt {
     /// Set verbose level
     #[structopt(short, long)]
     verbose: bool,
+}
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "arguments", about = "TODO!")]
+struct Args {
+    #[structopt(flatten)]
+    globals: GlobalOptions,
 
     /// Run command
     #[structopt(subcommand)]
@@ -60,7 +67,7 @@ fn compare(base_path: &Path, target_path: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn synchronize(base_path: &Path, target_path: &Path) -> Result<(), Box<dyn Error>> {
+fn synchronize(base_path: &Path, target_path: &Path, globals: &GlobalOptions) -> Result<(), Box<dyn Error>> {
     let base_dir_tree = dir_tree::load_dir_tree(base_path)?;
     let target_dir_tree = dir_tree::load_dir_tree(target_path)?;
 
@@ -79,23 +86,29 @@ fn synchronize(base_path: &Path, target_path: &Path) -> Result<(), Box<dyn Error
         }
     }
 
+    if globals.no_commit {
+        println!("No-commit enabled. Not committing!");
+    } else {
+        println!("Committing TODO!");
+    }
+
     Ok(())
 }
 
 
-fn process_command(cmd: &Command) -> Result<(), Box<dyn Error>> {
+fn process_command(cmd: &Command, globals: &GlobalOptions) -> Result<(), Box<dyn Error>> {
     match cmd {
         Command::Compare { base_path, target_path } => compare(base_path.as_path(), target_path.as_path())?,
-        Command::Synchronize { base_path, target_path } => synchronize(base_path.as_path(), target_path.as_path())?,
+        Command::Synchronize { base_path, target_path } => synchronize(base_path.as_path(), target_path.as_path(), globals)?,
     }
 
     Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let opt = Opt::from_args();
+    let args = Args::from_args();
 
-    process_command(&opt.command)?;
+    process_command(&args.command, &args.globals)?;
 
     Ok(())
 }
