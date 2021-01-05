@@ -1,3 +1,4 @@
+use log::info;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
@@ -59,7 +60,7 @@ fn compare(base_path: &Path, target_path: &Path) -> Result<(), Box<dyn Error>> {
     let target_dir_tree = dir_tree::load_dir_tree(target_path)?;
 
     let comparison = dir_diff::compare_dirs(&base_dir_tree, &target_dir_tree);
-    println!("Comparing {:#?} to {:#?}: {:#?}",
+    info!("Comparing {:#?} to {:#?}: {:#?}",
              base_path,
              target_path,
              comparison);
@@ -71,7 +72,7 @@ fn synchronize(base_path: &Path, target_path: &Path, globals: &GlobalOptions) ->
     let base_dir_tree = dir_tree::load_dir_tree(base_path)?;
     let target_dir_tree = dir_tree::load_dir_tree(target_path)?;
 
-    println!("Synchronizing {:#?} to {:#?}...",
+    info!("Synchronizing {:#?} to {:#?}...",
              target_path,
              base_path);
 
@@ -79,16 +80,16 @@ fn synchronize(base_path: &Path, target_path: &Path, globals: &GlobalOptions) ->
     let sync_ops = dir_sync::generate_sync_operations(&comparison, &base_path, &target_path);
 
     if globals.no_commit {
-        println!("No-commit enabled. Not committing!");
+        info!("No-commit enabled. Not committing!");
         for op in sync_ops.iter() {
             match op {
-                dir_sync::SyncOp::Copy{src, dest} => println!("Copying {:?} to {:?}", src, dest),
-                dir_sync::SyncOp::Remove{path} => println!("Removing {:?}", path),
-                dir_sync::SyncOp::Keep{path} => println!("Keeping {:?}", path),
+                dir_sync::SyncOp::Copy{src, dest} => info!("Copying {:?} to {:?}", src, dest),
+                dir_sync::SyncOp::Remove{path} => info!("Removing {:?}", path),
+                dir_sync::SyncOp::Keep{path} => info!("Keeping {:?}", path),
             }
         }
     } else {
-        println!("Committing...");
+        info!("Committing...");
         dir_sync::commit_sync(&sync_ops)?;
     }
 
@@ -106,8 +107,9 @@ fn process_command(cmd: &Command, globals: &GlobalOptions) -> Result<(), Box<dyn
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let args = Args::from_args();
+    simple_logger::SimpleLogger::new().init().unwrap();
 
+    let args = Args::from_args();
     process_command(&args.command, &args.globals)?;
 
     Ok(())

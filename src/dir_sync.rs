@@ -1,5 +1,6 @@
 use crate::dir_diff;
 
+use log::{debug, info, warn};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
@@ -126,13 +127,13 @@ fn copy_item(from: &PathBuf, to: &PathBuf) -> std::io::Result<()> {
 
                         copy_item(&from_subdir_path, &to_subdir_path)?;
                     },
-                    None => println!("TODO: Can't read that file's name"),
+                    None => warn!("TODO: Can't read that file's name"),
                 },
-                None => println!("TODO: Path ends with '..'"),
+                None => warn!("TODO: Path ends with '..'"),
             };
         }
     } else {
-        println!("Unsupported operation!");
+        debug!("Unsupported operation!");
     }
 
     Ok(())
@@ -148,7 +149,7 @@ fn remove_item(path: &PathBuf) -> std::io::Result<()> {
 
         fs::remove_dir(path)?;
     } else {
-        println!("Unsupported operation!");
+        warn!("Unsupported operation!");
     }
 
     Ok(())
@@ -158,12 +159,12 @@ pub fn commit_sync(ops: &Vec<SyncOp>) -> std::io::Result<()> {
     for op in ops.iter() {
         match op {
             SyncOp::Copy{src, dest} => {
-                println!("Copying {:?} to {:?}", src, dest);
+                info!("Copying {:?} to {:?}", src, dest);
                 copy_item(&src, &dest)?;
             },
-            SyncOp::Keep{path} => println!("Keeping {:?}!", path),
+            SyncOp::Keep{path} => info!("Keeping {:?}!", path),
             SyncOp::Remove{path} => {
-                println!("Removing {:?}", path);
+                info!("Removing {:?}", path);
                 remove_item(&path)?;
             },
         }

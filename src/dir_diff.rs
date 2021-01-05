@@ -1,4 +1,6 @@
 use crate::dir_tree::{self, DirTree};
+
+use log::warn;
 use sha2::{Digest, Sha256};
 use std::clone::Clone;
 use std::collections::{HashMap, HashSet};
@@ -89,7 +91,7 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
         let base_file = match base_dir.files.get(file) {
             Some(f) => f,
             None => {
-                println!("Somehow you messed up with {:?}", file);
+                warn!("Somehow you messed up with {:?}", file);
                 continue;
             }
         };
@@ -97,7 +99,7 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
         let target_file = match target_dir.files.get(file) {
             Some(f) => f,
             None => {
-                println!("Somehow you messed up with {:?}", file);
+                warn!("Somehow you messed up with {:?}", file);
                 continue;
             }
         };
@@ -105,7 +107,7 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
         let base_hash = match hash_file(base_file) {
             Ok(h) => h,
             Err(e) => {
-                println!("Error when hashing file: {}", e);
+                warn!("Error when hashing file: {}", e);
                 continue;
             }
         };
@@ -113,7 +115,7 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
         let target_hash = match hash_file(target_file) {
             Ok(h) => h,
             Err(e) => {
-                println!("Error when hashing file: {}", e);
+                warn!("Error when hashing file: {}", e);
                 continue;
             }
         };
@@ -139,7 +141,7 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
         let base_subdir = match base_dir.subdirs.get(subdir) {
             Some(d) => d,
             None => {
-                println!("Somehow you messed up with {:?}", subdir);
+                warn!("Somehow you messed up with {:?}", subdir);
                 continue;
             }
         };
@@ -147,7 +149,7 @@ pub fn compare_dirs(base_dir: &DirTree, target_dir: &DirTree) -> DirComparison {
         let target_subdir = match target_dir.subdirs.get(subdir) {
             Some(d) => d,
             None => {
-                println!("Somehow you messed up with {:?}", subdir);
+                warn!("Somehow you messed up with {:?}", subdir);
                 continue;
             }
         };

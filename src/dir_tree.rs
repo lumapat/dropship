@@ -1,3 +1,5 @@
+use log::warn;
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
@@ -36,12 +38,12 @@ pub fn load_dir_tree(path: &Path) -> Result<DirTree, Box<dyn Error>> {
             Some(oss) => match oss.to_str() {
                 Some(s) => String::from(s),
                 None => {
-                    println!("Unreadable file name '{:?}'. Skipping!", oss);
+                    warn!("Unreadable file name '{:?}'. Skipping!", oss);
                     continue;
                 }
             }
             None => {
-                println!("Invalid file or directory '{:?}'. Skipping!", entry_path);
+                warn!("Invalid file or directory '{:?}'. Skipping!", entry_path);
                 continue;
             }
         };
@@ -53,7 +55,7 @@ pub fn load_dir_tree(path: &Path) -> Result<DirTree, Box<dyn Error>> {
             dir_tree.files.insert(entry_path_str, Box::new(File{path: entry_path}));
         } else {
             // TODO here
-            println!("Unrecognized entry type. Skipping!");
+            warn!("Unrecognized entry type. Skipping!");
         }
     }
 
