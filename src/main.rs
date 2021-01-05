@@ -78,18 +78,18 @@ fn synchronize(base_path: &Path, target_path: &Path, globals: &GlobalOptions) ->
     let comparison = dir_diff::compare_dirs(&base_dir_tree, &target_dir_tree);
     let sync_ops = dir_sync::generate_sync_operations(&comparison, &base_path, &target_path);
 
-    for op in sync_ops.iter() {
-        match op {
-            dir_sync::SyncOp::Copy{src, dest} => println!("Copying {:?} to {:?}", src, dest),
-            dir_sync::SyncOp::Remove{path} => println!("Removing {:?}", path),
-            dir_sync::SyncOp::Keep{path} => println!("Keeping {:?}", path),
-        }
-    }
-
     if globals.no_commit {
         println!("No-commit enabled. Not committing!");
+        for op in sync_ops.iter() {
+            match op {
+                dir_sync::SyncOp::Copy{src, dest} => println!("Copying {:?} to {:?}", src, dest),
+                dir_sync::SyncOp::Remove{path} => println!("Removing {:?}", path),
+                dir_sync::SyncOp::Keep{path} => println!("Keeping {:?}", path),
+            }
+        }
     } else {
-        println!("Committing TODO!");
+        println!("Committing...");
+        dir_sync::commit_sync(&sync_ops)?;
     }
 
     Ok(())

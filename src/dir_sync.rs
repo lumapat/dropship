@@ -1,5 +1,6 @@
 use crate::dir_diff;
 
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
 
@@ -98,6 +99,75 @@ pub fn generate_sync_operations(comparison: &dir_diff::DirComparison, base_dir: 
     ops
 }
 
-pub fn _commit_sync(_ops: &Vec<SyncOp>) -> std::io::Result<()> {
+fn copy_item(from: &PathBuf, to: &PathBuf) -> std::io::Result<()> {
+    if from.is_file() {
+        if to.exists() && !to.is_file() {
+            // TODO: Do something here
+        }
+
+        // TODO: Check return value is equal to size of file (in bytes)
+        fs::copy(from, to)?;
+    } else if from.is_dir() {
+        if to.exists() {
+            // TODO: Do something here
+        }
+
+        fs::create_dir_all(to)?;
+
+        for entry in fs::read_dir(from)? {
+            let from_subdir_path = entry?.path();
+
+            // TODO: Properly handle these issues
+            match from_subdir_path.file_name() {
+                Some(os_s) => match os_s.to_str() {
+                    Some(file_name) => {
+                        let mut to_subdir_path: PathBuf = to.clone();
+                        to_subdir_path.push(file_name);
+
+                        copy_item(&from_subdir_path, &to_subdir_path)?;
+                    },
+                    None => println!("TODO: Can't read that file's name"),
+                },
+                None => println!("TODO: Path ends with '..'"),
+            };
+        }
+    } else {
+        println!("Unsupported operation!");
+    }
+
+    Ok(())
+}
+
+fn remove_item(path: &PathBuf) -> std::io::Result<()> {
+    if path.is_file() {
+        fs::remove_file(path)?;
+    } else if path.is_dir() {
+        for entry in fs::read_dir(path)? {
+            remove_item(&entry?.path())?;
+        }
+
+        fs::remove_dir(path)?;
+    } else {
+        println!("Unsupported operation!");
+    }
+
+    Ok(())
+}
+
+pub fn commit_sync(ops: &Vec<SyncOp>) -> std::io::Result<()> {
+    for op in ops.iter() {
+        match op {
+            SyncOp::Copy{src, dest} => {
+                println!("Copying {:?} to {:?}", src, dest);
+                copy_item(&src, &dest)?;
+            },
+            SyncOp::Keep{path} => println!("Keeping {:?}!", path),
+            SyncOp::Remove{path} => {
+                println!("Removing {:?}", path);
+                remove_item(&path)?;
+            },
+        }
+    }
+
     Ok(())
 }
