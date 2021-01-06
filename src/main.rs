@@ -1,4 +1,5 @@
 use log::info;
+use simple_error;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
@@ -52,6 +53,28 @@ enum Command {
         /// Directory to compare with
         #[structopt(short, long)]
         target_path: PathBuf,
+        /// Sync strategy to use (default: "full")
+        #[structopt(short, long, default_value = "full")]
+        sync_strategy: SyncStrategy,
+    }
+}
+
+// TODO: Find a way to make the other enum a StructOpt defined in dir_sync
+#[derive(Debug, StructOpt)]
+enum SyncStrategy {
+    Full,
+    Patch
+}
+
+impl std::str::FromStr for SyncStrategy {
+    type Err = simple_error::SimpleError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "full" => Ok(SyncStrategy::Full),
+            "patch" => Ok(SyncStrategy::Patch),
+            _ => Err(simple_error::simple_error!("Can't use that strategy!")),
+        }
     }
 }
 
@@ -68,7 +91,9 @@ fn compare(base_path: &Path, target_path: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn synchronize(base_path: &Path, target_path: &Path, globals: &GlobalOptions) -> Result<(), Box<dyn Error>> {
+fn synchronize(sync_strategy: &SyncStrategy,
+               base_path: &Path, target_path: &Path,
+               globals: &GlobalOptions) -> Result<(), Box<dyn Error>> {
     let base_dir_tree = dir_tree::load_dir_tree(base_path)?;
     let target_dir_tree = dir_tree::load_dir_tree(target_path)?;
 
@@ -76,8 +101,19 @@ fn synchronize(base_path: &Path, target_path: &Path, globals: &GlobalOptions) ->
              target_path,
              base_path);
 
+    let sync_strategy = match sync_strategy {
+        SyncStrategy::Full => {
+            info!("Performing full sync!");
+            dir_sync::SyncStrategy::Full
+        },
+        SyncStrategy::Patch => {
+            info!("Performing patch sync!");
+            dir_sync::SyncStrategy::Patch
+        },
+    };
+
     let comparison = dir_diff::compare_dirs(&base_dir_tree, &target_dir_tree);
-    let sync_ops = dir_sync::generate_sync_operations(&comparison, &base_path, &target_path);
+    let sync_ops = dir_sync::generate_sync_operations(&comparison, &sync_strategy, &base_path, &target_path);
 
     if globals.no_commit {
         info!("No-commit enabled. Not committing!");
@@ -95,8 +131,8 @@ fn synchronize(base_path: &Path, target_path: &Path, globals: &GlobalOptions) ->
 
 fn process_command(cmd: &Command, globals: &GlobalOptions) -> Result<(), Box<dyn Error>> {
     match cmd {
-        Command::Compare { base_path, target_path } => compare(base_path.as_path(), target_path.as_path())?,
-        Command::Synchronize { base_path, target_path } => synchronize(base_path.as_path(), target_path.as_path(), globals)?,
+        Command::Compare {base_path, target_path} => compare(base_path.as_path(), target_path.as_path())?,
+        Command::Synchronize {base_path, target_path, sync_strategy} => synchronize(&sync_strategy, base_path.as_path(), target_path.as_path(), globals)?,
     }
 
     Ok(())

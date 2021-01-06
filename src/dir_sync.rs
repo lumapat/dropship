@@ -49,7 +49,19 @@ impl fmt::Display for SyncOp {
     }
 }
 
-pub fn generate_sync_operations(comparison: &dir_diff::DirComparison, base_dir: &Path, target_dir: &Path) -> Vec<SyncOp> {
+// TODO: Define "new" and "missing" as coming from "dir_diff"
+
+#[derive(Debug)]
+pub enum SyncStrategy {
+    /// Remove new items and add missing items
+    Full,
+    /// Patch up any missing items but do not delete new items
+    Patch,
+}
+
+pub fn generate_sync_operations(comparison: &dir_diff::DirComparison,
+                                strategy: &SyncStrategy,
+                                base_dir: &Path, target_dir: &Path) -> Vec<SyncOp> {
     let mut ops: Vec<SyncOp> = Vec::new();
 
     // TODO: Understand difference between clone and copy that allowed the assignment
@@ -89,12 +101,18 @@ pub fn generate_sync_operations(comparison: &dir_diff::DirComparison, base_dir: 
     // Create operations for files
     ops.extend(file_comparison.missing.clone().into_iter().map(to_copy_op));
     ops.extend(file_comparison.changed.clone().into_iter().map(to_copy_op));
-    ops.extend(file_comparison.new.clone().into_iter().map(to_remove_op));
+    match strategy {
+        SyncStrategy::Full => ops.extend(file_comparison.new.clone().into_iter().map(to_remove_op)),
+        _ => ops.extend(file_comparison.new.clone().into_iter().map(to_keep_op)),
+    }
     ops.extend(file_comparison.same.clone().into_iter().map(to_keep_op));
 
     let subdir_comparison = &comparison.subdir_comparison;
     ops.extend(subdir_comparison.missing.clone().into_iter().map(to_copy_op));
-    ops.extend(subdir_comparison.new.clone().into_iter().map(to_remove_op));
+    match strategy {
+        SyncStrategy::Full => ops.extend(subdir_comparison.new.clone().into_iter().map(to_remove_op)),
+        _ => ops.extend(subdir_comparison.new.clone().into_iter().map(to_keep_op)),
+    }
     ops.extend(subdir_comparison.same.clone().into_iter().map(to_keep_op));
 
     let changed_subdirs = &comparison.changed_subdirs;
@@ -105,7 +123,7 @@ pub fn generate_sync_operations(comparison: &dir_diff::DirComparison, base_dir: 
         base.push(d.clone());
         target.push(d.clone());
 
-        ops.append(&mut generate_sync_operations(&cmp, &base, &target));
+        ops.append(&mut generate_sync_operations(&cmp, strategy, &base, &target));
     }
 
     ops

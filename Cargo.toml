@@ -9,5 +9,6 @@ edition = "2018"
 [dependencies]
 log = { version = "0.4", features = ["std", "serde"] }
 sha2 = "0.9.2"
+simple-error = "0.2.2"
 simple_logger = "1.11.0"
 structopt = { version = "0.3", default-features = false }
