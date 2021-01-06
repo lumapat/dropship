@@ -82,11 +82,7 @@ fn synchronize(base_path: &Path, target_path: &Path, globals: &GlobalOptions) ->
     if globals.no_commit {
         info!("No-commit enabled. Not committing!");
         for op in sync_ops.iter() {
-            match op {
-                dir_sync::SyncOp::Copy{src, dest} => info!("Copying {:?} to {:?}", src, dest),
-                dir_sync::SyncOp::Remove{path} => info!("Removing {:?}", path),
-                dir_sync::SyncOp::Keep{path} => info!("Keeping {:?}", path),
-            }
+            info!("{}", op);
         }
     } else {
         info!("Committing...");

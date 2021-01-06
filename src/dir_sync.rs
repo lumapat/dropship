@@ -1,6 +1,7 @@
 use crate::dir_diff;
 
 use log::{debug, info, warn};
+use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
@@ -36,6 +37,16 @@ pub enum SyncOp {
     // Sync - like copy (for summary/debugging when you want to condense output)
     //      - since copy ignores what's already there, sync means that whatever
     //      - isn't will be copied and whatever is will stay
+}
+
+impl fmt::Display for SyncOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SyncOp::Copy{src, dest} => write!(f, "Copying '{}' to '{}'", src.display(), dest.display()),
+            SyncOp::Keep{path} => write!(f, "Keeping '{}'", path.display()),
+            SyncOp::Remove{path} => write!(f, "Removing '{}'", path.display()),
+        }
+    }
 }
 
 pub fn generate_sync_operations(comparison: &dir_diff::DirComparison, base_dir: &Path, target_dir: &Path) -> Vec<SyncOp> {
@@ -157,16 +168,11 @@ fn remove_item(path: &PathBuf) -> std::io::Result<()> {
 
 pub fn commit_sync(ops: &Vec<SyncOp>) -> std::io::Result<()> {
     for op in ops.iter() {
+        info!("{}", op);
         match op {
-            SyncOp::Copy{src, dest} => {
-                info!("Copying {:?} to {:?}", src, dest);
-                copy_item(&src, &dest)?;
-            },
-            SyncOp::Keep{path} => info!("Keeping {:?}!", path),
-            SyncOp::Remove{path} => {
-                info!("Removing {:?}", path);
-                remove_item(&path)?;
-            },
+            SyncOp::Copy{src, dest} => copy_item(&src, &dest)?,
+            SyncOp::Keep{path: _} => (),
+            SyncOp::Remove{path} => remove_item(&path)?,
         }
     }
 
