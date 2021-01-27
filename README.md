@@ -7,3 +7,5 @@ Organize and safeguard files in your system.
 - [X] Support overwriting sync (flat out copying one directory to another)
 - [X] Support missing-only sync (do not delete, only copy between directories)
 - [ ] Create organize sub-command to organize files by some criteria (initially by parent directory and date)
+- [ ] Fix up README for easier contribution and usability
+- [ ] Clean up TODOs and FIXMEs in code
