@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
 mod dir_diff;
+mod dir_organize;
 mod dir_sync;
 mod dir_tree;
 
@@ -34,7 +35,7 @@ struct Args {
 #[derive(Debug, StructOpt)]
 #[structopt(about = "Command TODO!")]
 enum Command {
-    /// Compare contents of pathectories
+    /// Compare contents of directories
     Compare {
         /// Directory to base differences from
         #[structopt(short, long)]
@@ -42,6 +43,15 @@ enum Command {
         /// Directory to compare with
         #[structopt(short, long)]
         target_path: PathBuf,
+    },
+
+    /// Organize contents (by formatted path syntax)
+    Organize {
+        /// Directory to organize contents
+        #[structopt(short, long)]
+        path: PathBuf,
+
+        // BIG TODO: Parse a format to organize files
     },
 
     /// Sync contents of pathectories
@@ -91,6 +101,14 @@ fn compare(base_path: &Path, target_path: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn organize(path: &Path) -> Result<(), Box<dyn Error>> {
+    let dt = dir_tree::load_dir_tree(path)?;
+    let ops = dir_organize::generate_organize_operations(&dt);
+    info!("Some operations {:#?}", ops);
+
+    Ok(())
+}
+
 fn synchronize(sync_strategy: &SyncStrategy,
                base_path: &Path, target_path: &Path,
                globals: &GlobalOptions) -> Result<(), Box<dyn Error>> {
@@ -132,6 +150,7 @@ fn synchronize(sync_strategy: &SyncStrategy,
 fn process_command(cmd: &Command, globals: &GlobalOptions) -> Result<(), Box<dyn Error>> {
     match cmd {
         Command::Compare {base_path, target_path} => compare(base_path.as_path(), target_path.as_path())?,
+        Command::Organize {path} => organize(path.as_path())?,
         Command::Synchronize {base_path, target_path, sync_strategy} => synchronize(&sync_strategy, base_path.as_path(), target_path.as_path(), globals)?,
     }
 
